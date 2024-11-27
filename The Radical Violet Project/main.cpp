@@ -72,6 +72,7 @@ int main()
 	glEnableVertexAttribArray(1);
 	glBindVertexArray(0); // unbind for safety
 
+	Shader shaderProgram2("shader.vert", "shader.frag");
 	// Render Loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -84,6 +85,7 @@ int main()
 
 		// Transformations
 		glm::mat4 transformMat(1.0f);
+		transformMat = glm::translate(transformMat, glm::vec3(0.3f, 0.0f, 0.0f));
 		transformMat = glm::rotate(transformMat, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
 		transformMat = glm::scale(transformMat, glm::vec3(0.5f, 0.5f, 0.5f));
 		shaderProgram.setMat4("transform", transformMat);
@@ -91,6 +93,14 @@ int main()
 		// Drawing
 		glBindVertexArray(VAO);
 		shaderProgram.use();
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		
+		// 2nd tri
+		transformMat = glm::mat4(1.0f);
+		transformMat = glm::translate(transformMat, glm::vec3(-0.5f, 0.75f, 0.0f));
+		transformMat = glm::scale(transformMat, glm::vec3(1/tan(glfwGetTime())));
+		shaderProgram2.setMat4("transform", transformMat);
+		shaderProgram2.use();
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		// check for events and swap buffers
