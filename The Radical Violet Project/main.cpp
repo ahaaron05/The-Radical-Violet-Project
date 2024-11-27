@@ -12,6 +12,7 @@ void processInput(GLFWwindow* window);
 // Settings
 const unsigned int SCREEN_WIDTH = 900;
 const unsigned int SCREEN_HEIGHT = 700;
+const float FOV_Y = 60.0f;
 
 int main()
 {
@@ -39,6 +40,7 @@ int main()
 		std::cout << "Failed to initialize GLAD\n";
 		return -1;
 	}
+	glEnable(GL_DEPTH_TEST);
 
 	// query GPU info
 	const char* GPUVendor = (const char*)glGetString(GL_VENDOR);
@@ -53,26 +55,77 @@ int main()
 	Shader shaderProgram("shader.vert", "shader.frag");
 
 	// Vertex data
-	float triVertices[] =
-	{   // positions		colors
-		.5, -.5, 0,			1, 0, 0,				// bottom right		
-		-.5, -.5, 0,		0, 1, 0,			    // bottom left
-		0, .5, 0,			0, 0, 1,				// top
+	float vertices[] =
+	{   // positions				colors
+		-0.5f, -0.5f, -0.5f,	  0.0f, 0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,	  1.0f, 0.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,	  0.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,	  0.0f, 0.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,	  1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,	  0.0f, 1.0f, 0.0f,
+								  
+		-0.5f, -0.5f,  0.5f,	  0.0f, 0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,	  1.0f, 0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	  0.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	  0.0f, 0.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,	  1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,	  0.0f, 1.0f, 0.0f,
+								  
+		-0.5f,  0.5f,  0.5f,	  0.0f, 0.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,	  1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,	  0.0f, 1.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,	  0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,	  1.0f, 0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,	  0.0f, 1.0f, 0.0f,
+								  
+		 0.5f,  0.5f,  0.5f,	  0.0f, 0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,	  1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,	  0.0f, 1.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,	  0.0f, 0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,	  1.0f, 0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	  0.0f, 1.0f, 0.0f,
+								  
+		-0.5f, -0.5f, -0.5f,	  0.0f, 0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,	  1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,	  0.0f, 1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,	  0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,	  1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,	  0.0f, 1.0f, 0.0f,
+								  
+		-0.5f,  0.5f, -0.5f,	  0.0f, 0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,	  1.0f, 0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	  0.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,	  0.0f, 0.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,	  1.0f, 0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,	  0.0f, 1.0f, 0.0f,
+	};
+	unsigned int indices[] =
+	{
+		0, 1, 3,	// tri 1
+		1, 2, 3,	// tri 2
 	};
 
 	unsigned int VBO, VAO;
+	unsigned int EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
 	glBindVertexArray(VAO); //! BIND VAO FIRST
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(triVertices), triVertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(4 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 	glBindVertexArray(0); // unbind for safety
 
-	Shader shaderProgram2("shader.vert", "shader.frag");
+	glm::mat4 view(1.0f);
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -4.0f)); // NOTE: right-handed system
+	glm::mat4 projection(1.0f);
+	projection = glm::perspective(glm::radians(45.0f), (float)(SCREEN_WIDTH / SCREEN_HEIGHT), 0.1f, 100.0f);
+
 	// Render Loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -81,27 +134,20 @@ int main()
 
 		// render commands
 		glClearColor(0, 0, 0, 1);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Transformations
-		glm::mat4 transformMat(1.0f);
-		transformMat = glm::translate(transformMat, glm::vec3(0.3f, 0.0f, 0.0f));
-		transformMat = glm::rotate(transformMat, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-		transformMat = glm::scale(transformMat, glm::vec3(0.5f, 0.5f, 0.5f));
-		shaderProgram.setMat4("transform", transformMat);
+		glm::mat4 model(1.0f);
+		model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0, 1, 0));
+		
+		shaderProgram.setMat4("model", model);
+		shaderProgram.setMat4("view", view);
+		shaderProgram.setMat4("projection", projection);
 
 		// Drawing
 		glBindVertexArray(VAO);
 		shaderProgram.use();
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		
-		// 2nd tri
-		transformMat = glm::mat4(1.0f);
-		transformMat = glm::translate(transformMat, glm::vec3(-0.5f, 0.75f, 0.0f));
-		transformMat = glm::scale(transformMat, glm::vec3(1/tan(glfwGetTime())));
-		shaderProgram2.setMat4("transform", transformMat);
-		shaderProgram2.use();
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// check for events and swap buffers
 		glfwSwapBuffers(window);
